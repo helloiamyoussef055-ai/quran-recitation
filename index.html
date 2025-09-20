@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recitation of Allah Subhanahu wa Ta'ala</title>
+  <style>
+    body { margin:0; display:flex; height:100vh; font-family:"Amiri", serif; background:#021627; color:#eaf6ff; }
+    aside { width:260px; background:#071428; overflow-y:auto; border-right:1px solid rgba(255,255,255,.1); }
+    aside h2 { padding:1rem; margin:0; color:#00d1ff; border-bottom:1px solid rgba(255,255,255,.1); }
+    aside ul { list-style:none; margin:0; padding:0; }
+    aside li { padding:.75rem 1rem; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05); }
+    aside li:hover { background:#0b61ff; }
+
+    main { flex:1; display:flex; flex-direction:column; }
+    header { padding:1rem; border-bottom:1px solid rgba(255,255,255,.1); display:flex; justify-content:space-between; align-items:center; }
+    header h1 { font-size:1.2rem; color:#cfeeff; margin:0; }
+    header button { background:linear-gradient(90deg,#0b61ff,#00d1ff); border:none; padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600; }
+
+    #verses { flex:1; overflow-y:auto; padding:1rem; text-align:right; direction:rtl; font-size:1.2rem; line-height:2; }
+    .ayah { display:block; padding:.5rem 0; }
+  </style>
+</head>
+<body>
+  <aside>
+    <h2>Surahs</h2>
+    <ul id="surahList"></ul>
+  </aside>
+  <main>
+    <header>
+      <h1 id="surahTitle">Select a Surah</h1>
+      <div>
+        <button id="playBtn">Play</button>
+        <button id="pauseBtn">Pause</button>
+      </div>
+    </header>
+    <div id="verses">اختر سورة من القائمة لعرض الآيات</div>
+  </main>
+  <audio id="player"></audio>
+
+<script>
+const surahList = document.getElementById('surahList');
+const versesDiv = document.getElementById('verses');
+const surahTitle = document.getElementById('surahTitle');
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const player = document.getElementById('player');
+
+let currentSurah = 1;
+let autoPlay = false;
+
+// Surah names (with counts)
+const surahs = [
+  [1,"الفاتحة"],[2,"البقرة"],[3,"آل عمران"],[4,"النساء"],[5,"المائدة"],
+  [6,"الأنعام"],[7,"الأعراف"],[8,"الأنفال"],[9,"التوبة"],[10,"يونس"],
+  [11,"هود"],[12,"يوسف"],[13,"الرعد"],[14,"إبراهيم"],[15,"الحجر"],
+  [16,"النحل"],[17,"الإسراء"],[18,"الكهف"],[19,"مريم"],[20,"طه"],
+  [21,"الأنبياء"],[22,"الحج"],[23,"المؤمنون"],[24,"النور"],[25,"الفرقان"],
+  [26,"الشعراء"],[27,"النمل"],[28,"القصص"],[29,"العنكبوت"],[30,"الروم"],
+  [31,"لقمان"],[32,"السجدة"],[33,"الأحزاب"],[34,"سبأ"],[35,"فاطر"],
+  [36,"يس"],[37,"الصافات"],[38,"ص"],[39,"الزمر"],[40,"غافر"],
+  [41,"فصلت"],[42,"الشورى"],[43,"الزخرف"],[44,"الدخان"],[45,"الجاثية"],
+  [46,"الأحقاف"],[47,"محمد"],[48,"الفتح"],[49,"الحجرات"],[50,"ق"],
+  [51,"الذاريات"],[52,"الطور"],[53,"النجم"],[54,"القمر"],[55,"الرحمن"],
+  [56,"الواقعة"],[57,"الحديد"],[58,"المجادلة"],[59,"الحشر"],[60,"الممتحنة"],
+  [61,"الصف"],[62,"الجمعة"],[63,"المنافقون"],[64,"التغابن"],[65,"الطلاق"],
+  [66,"التحريم"],[67,"الملك"],[68,"القلم"],[69,"الحاقة"],[70,"المعارج"],
+  [71,"نوح"],[72,"الجن"],[73,"المزمل"],[74,"المدثر"],[75,"القيامة"],
+  [76,"الانسان"],[77,"المرسلات"],[78,"النبأ"],[79,"النازعات"],[80,"عبس"],
+  [81,"التكوير"],[82,"الانفطار"],[83,"المطففين"],[84,"الانشقاق"],[85,"البروج"],
+  [86,"الطارق"],[87,"الأعلى"],[88,"الغاشية"],[89,"الفجر"],[90,"البلد"],
+  [91,"الشمس"],[92,"الليل"],[93,"الضحى"],[94,"الشرح"],[95,"التين"],
+  [96,"العلق"],[97,"القدر"],[98,"البينة"],[99,"الزلزلة"],[100,"العاديات"],
+  [101,"القارعة"],[102,"التكاثر"],[103,"العصر"],[104,"الهمزة"],[105,"الفيل"],
+  [106,"قريش"],[107,"الماعون"],[108,"الكوثر"],[109,"الكافرون"],[110,"النصر"],
+  [111,"المسد"],[112,"الإخلاص"],[113,"الفلق"],[114,"الناس"]
+];
+
+// Sidebar setup
+surahs.forEach(([num,name])=>{
+  const li=document.createElement('li');
+  li.textContent = num+". "+name;
+  li.onclick=()=>loadSurah(num,name);
+  surahList.appendChild(li);
+});
+
+function loadSurah(num,name){
+  currentSurah=num;
+  surahTitle.textContent = `سورة ${name}`;
+  versesDiv.innerHTML="جاري التحميل...";
+  fetch(`https://api.alquran.cloud/v1/surah/${num}`)
+    .then(r=>r.json())
+    .then(data=>{
+      versesDiv.innerHTML="";
+      data.data.ayahs.forEach(a=>{
+        const span=document.createElement('span');
+        span.className="ayah";
+        span.textContent=a.text+" ﴿"+a.numberInSurah+"﴾ ";
+        versesDiv.appendChild(span);
+      });
+    })
+    .catch(err=>{versesDiv.innerHTML="خطأ في تحميل النص";});
+}
+
+function playSurah(num){
+  currentSurah=num;
+  const file=String(num).padStart(3,'0')+".mp3";
+  player.src=file;
+  player.play().catch(err=>console.log(err));
+  loadSurah(num,surahs[num-1][1]);
+}
+
+player.onended=()=>{
+  if(autoPlay && currentSurah<114){
+    playSurah(currentSurah+1);
+  }
+};
+
+playBtn.onclick=()=>{autoPlay=true; playSurah(currentSurah);};
+pauseBtn.onclick=()=>player.pause();
+</script>
+</body>
+</html>
