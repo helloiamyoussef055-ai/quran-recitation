@@ -1,1286 +1,659 @@
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تلاوة القرآن الكريم - Quran Recitation</title>
-    
-    <!-- 
-    DEPLOYMENT INSTRUCTIONS:
-    1. Upload this index.html file to Netlify, GitHub Pages, or any static hosting
-    2. Optionally upload timing JSON files (001.json, 002.json, 003.json) to timings/ folder
-    3. No server required - works entirely client-side
-    
-    TESTING STEPS:
-    1. Open website in browser
-    2. Tap Play button (required for mobile autoplay compliance)
-    3. Verify Surah 1 Arabic text loads and audio streams from EveryAyah
-    4. Test verse highlighting if timing JSON available
-    5. Test Play All auto-advance feature
-    6. Test search functionality with Arabic and English text
-    -->
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Noto Naskh Arabic', serif;
-            background: #021627;
-            color: #eaf6ff;
-            line-height: 1.6;
-            direction: rtl;
-        }
-        
-        .container {
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        .sidebar {
-            width: 350px;
-            background: linear-gradient(135deg, #0b61ff, #00d1ff);
-            padding: 2rem;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-        }
-        
-        .main-content {
-            flex: 1;
-            margin-right: 350px;
-            padding: 2rem;
-            background: #021627;
-        }
-        
-        .logo {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .logo h1 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 0.5rem;
-        }
-        
-        .logo p {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.9);
-        }
-        
-        .search-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
-        }
-        
-        .search-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Noto Naskh Arabic', serif;
-            font-size: 1rem;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            direction: rtl;
-            transition: all 0.3s ease;
-        }
-        
-        .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .search-input:focus {
-            outline: 2px solid #00d1ff;
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        .search-results {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 1rem;
-            display: none;
-        }
-        
-        .search-result-item {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 0.8rem;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-        }
-        
-        .search-result-item:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(0, 209, 255, 0.5);
-        }
-        
-        .search-result-surah {
-            font-size: 0.9rem;
-            color: #00d1ff;
-            margin-bottom: 0.3rem;
-        }
-        
-        .search-result-text {
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-        
-        .search-highlight {
-            background: rgba(255, 255, 0, 0.3);
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-        
-        .controls {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
-        }
-        
-        .control-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .control-group:last-child {
-            margin-bottom: 0;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: white;
-        }
-        
-        select, button {
-            width: 100%;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Noto Naskh Arabic', serif;
-            font-size: 1rem;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        select:focus, button:focus {
-            outline: 2px solid #00d1ff;
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        button {
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.5rem;
-        }
-        
-        button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .play-btn {
-            background: linear-gradient(45deg, #00d1ff, #0b61ff);
-            font-size: 1.1rem;
-            padding: 15px;
-        }
-        
-        .play-btn:hover {
-            background: linear-gradient(45deg, #00b8e6, #0952e6);
-        }
-        
-        .nav-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-        }
-        
-        .surah-info {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 1.5rem;
-            text-align: center;
-            backdrop-filter: blur(10px);
-        }
-        
-        .surah-info h2 {
-            font-size: 1.4rem;
-            margin-bottom: 0.5rem;
-            color: white;
-        }
-        
-        .surah-info p {
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .quran-text {
-            background: rgba(234, 246, 255, 0.05);
-            border-radius: 15px;
-            padding: 2rem;
-            max-width: 800px;
-            margin: 0 auto;
-            border: 1px solid rgba(234, 246, 255, 0.1);
-        }
-        
-        .verse {
-            font-size: 1.8rem;
-            line-height: 2.5;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .verse:hover {
-            background: rgba(234, 246, 255, 0.05);
-        }
-        
-        .verse.highlighted {
-            background: linear-gradient(135deg, rgba(11, 97, 255, 0.3), rgba(0, 209, 255, 0.3));
-            border: 2px solid rgba(0, 209, 255, 0.5);
-            transform: scale(1.02);
-        }
-        
-        .verse.search-matched {
-            background: rgba(255, 255, 0, 0.1);
-            border: 2px solid rgba(255, 255, 0, 0.3);
-        }
-        
-        .verse-number {
-            display: inline-block;
-            background: linear-gradient(135deg, #0b61ff, #00d1ff);
-            color: white;
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            text-align: center;
-            line-height: 35px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            font-size: 1.2rem;
-            color: rgba(234, 246, 255, 0.7);
-        }
-        
-        .error-message {
-            background: rgba(255, 0, 0, 0.1);
-            border: 1px solid rgba(255, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-            color: #ff6b6b;
-            text-align: center;
-        }
-        
-        .status-message {
-            background: rgba(0, 209, 255, 0.1);
-            border: 1px solid rgba(0, 209, 255, 0.3);
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-            color: #00d1ff;
-            text-align: center;
-        }
-        
-        .audio-status {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            z-index: 1000;
-            display: none;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-            }
-            
-            .main-content {
-                margin-right: 0;
-                padding: 1rem;
-            }
-            
-            .verse {
-                font-size: 1.5rem;
-                line-height: 2.2;
-            }
-            
-            .controls {
-                padding: 1rem;
-            }
-            
-            .search-container {
-                padding: 1rem;
-            }
-            
-            button, select, .search-input {
-                padding: 15px;
-                font-size: 1.1rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .verse {
-                font-size: 1.3rem;
-                line-height: 2;
-                padding: 0.5rem;
-            }
-            
-            .quran-text {
-                padding: 1rem;
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تلاوة القرآن الكريم - Quran Recitation</title>
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Noto Naskh Arabic', serif;background:#021627;color:#fff;line-height:1.6;direction:rtl;}
+    .container{display:flex;min-height:100vh}
+    .sidebar{width:350px;background:linear-gradient(135deg,#0b61ff,#00d1ff);padding:2rem;position:fixed;height:100vh;overflow-y:auto;z-index:100}
+    .main-content{flex:1;margin-right:350px;padding:2rem;background:#021627}
+    .logo{text-align:center;margin-bottom:2rem}
+    .logo h1{font-size:2.0rem;font-weight:700;color:#fff;margin-bottom:.5rem}
+    .logo p{color:rgba(255,255,255,.9); font-size:1rem}
+    .search-container{background:rgba(255,255,255,0.08);border-radius:12px;padding:1rem;margin-bottom:1.5rem;position:relative;}
+    .search-input{width:100%;padding:12px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-family:'Noto Naskh Arabic',serif;font-size:1.05rem;direction:rtl}
+    .suggestions{background:#fff;color:#000;border-radius:8px;margin-top:6px;max-height:240px;overflow-y:auto;box-shadow:0 2px 18px rgba(0,0,0,0.25);display:none;position:absolute;right:1rem;left:1rem;z-index:2000}
+    .suggestion-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.06)}
+    .suggestion-item:hover{background:#f2f2f2}
+    .controls{background:rgba(255,255,255,0.08);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+    label{display:block;margin-bottom:.5rem;color:white;font-weight:600}
+    select, button{width:100%;padding:10px;border-radius:8px;border:none;background:rgba(255,255,255,0.18);color:white;font-size:1rem;cursor:pointer;font-family:'Noto Naskh Arabic'}
+    .play-btn{background:linear-gradient(45deg,#00d1ff,#0b61ff);padding:12px;font-weight:700}
+    .nav-buttons{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem}
+    .surah-info{background:rgba(255,255,255,0.06);border-radius:12px;padding:1rem;text-align:center;margin-top:1rem}
+    .surah-info h2{color:white;margin-bottom:.2rem;font-size:1.6rem}
+    .surah-extra{margin-top:.5rem;color:#ddd;font-size:0.98rem}
+    .quran-text{background:rgba(234,246,255,0.03);border-radius:12px;padding:2rem;max-width:900px;margin:0 auto;border:1px solid rgba(234,246,255,0.06)}
+    .verse{font-size:2.05rem;line-height:2.6;margin-bottom:1.2rem;padding:.8rem;border-radius:8px;cursor:pointer}
+    .verse-number{display:inline-block;background:linear-gradient(135deg,#0b61ff,#00d1ff);color:#fff;border-radius:50%;width:40px;height:40px;text-align:center;line-height:40px;margin-left:12px;font-weight:700}
+    .settings-btn{background:linear-gradient(135deg,#0b61ff,#00d1ff);padding:10px;border-radius:8px;margin-top:1rem;display:flex;align-items:center;justify-content:center;}
+    /* Settings modal (blue background) */
+    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:2000;justify-content:center;align-items:center}
+    .modal-content{background:linear-gradient(135deg,#0b61ff,#00d1ff);color:#fff;padding:18px;border-radius:12px;max-width:420px;width:92%;text-align:right;box-shadow:0 8px 30px rgba(0,0,0,0.45)}
+    .modal-content h2{margin:0 0 12px 0;font-size:1.25rem}
+    .close{cursor:pointer;float:left;font-size:1.45rem;font-weight:bold;color:#fff;background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:8px;border:none}
+    .setting-row{margin-bottom:12px}
+    .volume-range{width:100%}
+    .speed-select{width:100%}
+    .status-message{background:rgba(0,209,255,0.06);padding:.6rem;border-radius:8px;color:#aeefff;text-align:center;margin-top:.6rem}
+    .audio-status{position:fixed;bottom:18px;left:18px;background:rgba(0,0,0,0.75);padding:8px 12px;border-radius:8px;color:#fff;display:none;z-index:3000}
+    @media(max-width:800px){.sidebar{position:relative;width:100%;height:auto}.main-content{margin-right:0;padding:1rem}}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <div class="logo">
-                <h1>القرآن الكريم</h1>
-                <p>تلاوة مباركة</p>
-            </div>
-            
-            <div class="search-container">
-                <label for="search-input">البحث في القرآن</label>
-                <input type="text" id="search-input" class="search-input" placeholder="ابحث في الآيات أو أسماء السور...">
-                <div id="search-results" class="search-results"></div>
-            </div>
-            
-            <div class="controls">
-                <div class="control-group">
-                    <label for="reciter-select">القارئ</label>
-                    <select id="reciter-select">
-                        <option value="Yaser_Al_Dossari_64kbps">ياسر الدوسري</option>
-                        <option value="Abdul_Basit_Murattal_64kbps">عبد الباسط عبد الصمد</option>
-                        <option value="Mishary_Rashid_Alafasy_64kbps">مشاري راشد العفاسي</option>
-                        <option value="Saad_Al_Ghamidi_64kbps">سعد الغامدي</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label for="surah-select">السورة</label>
-                    <select id="surah-select">
-                        <!-- Will be populated dynamically -->
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <button id="play-btn" class="play-btn">▶ تشغيل</button>
-                </div>
-                
-                <div class="control-group">
-                    <div class="nav-buttons">
-                        <button id="prev-btn">السابقة</button>
-                        <button id="next-btn">التالية</button>
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <button id="play-all-btn">تشغيل الكل</button>
-                </div>
-            </div>
-            
-            <div class="surah-info">
-                <h2 id="surah-name">الفاتحة</h2>
-                <p id="surah-details">7 آيات - مكية</p>
-            </div>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="logo"><h1 id="app-title">القرآن الكريم</h1><p id="app-sub">تلاوة مباركة</p></div>
+
+      <div class="search-container">
+        <label id="search-label" for="search-input">البحث في القرآن</label>
+        <input id="search-input" class="search-input" placeholder="اكتب كلمة أو اسم سورة...">
+        <div id="suggestions" class="suggestions" aria-hidden="true"></div>
+      </div>
+
+      <div class="controls">
+        <label id="reciter-label" for="reciter-select">القارئ</label>
+        <select id="reciter-select"><option value="Yasir_Al_Dosari_64kbps">ياسر الدوسري</option></select>
+
+        <label id="surah-label" for="surah-select">السورة</label>
+        <select id="surah-select"></select>
+
+        <button id="play-btn" class="play-btn">▶ تشغيل</button>
+
+        <div class="nav-buttons">
+          <button id="prev-btn">السابقة</button>
+          <button id="next-btn">التالية</button>
         </div>
-        
-        <div class="main-content">
-            <div class="quran-text" id="quran-text">
-                <div class="loading">جاري تحميل النص الكريم...</div>
-            </div>
-        </div>
+
+        <button id="settings-btn" class="settings-btn">⚙️ الإعدادات</button>
+      </div>
+
+      <div class="surah-info">
+        <h2 id="surah-name">--</h2>
+        <p id="surah-details">--</p>
+        <div id="surah-extra" class="surah-extra">--</div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div id="quran-text" class="quran-text"><div class="loading" id="loading-text">جاري تحميل النص الكريم...</div></div>
+    </main>
+  </div>
+
+  <audio id="audio-player" preload="metadata" crossorigin="anonymous"></audio>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-content">
+      <button id="close-settings" class="close" aria-label="close">×</button>
+      <h2 id="settings-title">الإعدادات</h2>
+
+      <div class="setting-row">
+        <label id="lang-label" for="translation">اللغة / Language</label>
+        <select id="translation">
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <label id="speed-label" for="speed-select">سرعة التشغيل / Playback speed</label>
+        <select id="speed-select" class="speed-select">
+          <option value="0.75">0.75x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.25">1.25x</option>
+          <option value="1.5">1.5x</option>
+          <option value="1.75">1.75x</option>
+          <option value="2">2x</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <label id="volume-label" for="volume-range">مستوى الصوت / Volume</label>
+        <input id="volume-range" class="volume-range" type="range" min="0" max="100" value="50">
+        <div id="volume-value" style="margin-top:8px;color:#eaf9ff">50%</div>
+      </div>
+
+      <div style="margin-top:8px;color:#eaf9ff;font-size:0.95rem" id="settings-note">اختر اللغة ثم أغلق الإعدادات — سيتم إعادة تحميل النص تلقائياً</div>
     </div>
-    
-    <div id="audio-status" class="audio-status"></div>
-    <audio id="audio-player" preload="metadata" crossorigin="anonymous"></audio>
-    
-    <script>
-        class QuranPlayer {
-            constructor() {
-                this.currentSurah = 1;
-                this.currentReciter = 'Yaser_Al_Dossari_64kbps';
-                this.isPlaying = false;
-                this.isPlayingAll = false;
-                this.verses = [];
-                this.allVerses = []; // Store all verses for search
-                this.timings = null;
-                this.highlightInterval = null;
-                this.userInteracted = false;
-                this.audioLoadAttempts = 0;
-                this.maxAudioLoadAttempts = 3;
-                
-                this.audio = document.getElementById('audio-player');
-                this.playBtn = document.getElementById('play-btn');
-                this.nextBtn = document.getElementById('next-btn');
-                this.prevBtn = document.getElementById('prev-btn');
-                this.playAllBtn = document.getElementById('play-all-btn');
-                this.surahSelect = document.getElementById('surah-select');
-                this.reciterSelect = document.getElementById('reciter-select');
-                this.quranText = document.getElementById('quran-text');
-                this.surahName = document.getElementById('surah-name');
-                this.surahDetails = document.getElementById('surah-details');
-                this.searchInput = document.getElementById('search-input');
-                this.searchResults = document.getElementById('search-results');
-                this.audioStatus = document.getElementById('audio-status');
-                
-                this.surahs = [
-                    {number: 1, name: 'الفاتحة', englishName: 'Al-Fatihah', verses: 7, type: 'مكية'},
-                    {number: 2, name: 'البقرة', englishName: 'Al-Baqarah', verses: 286, type: 'مدنية'},
-                    {number: 3, name: 'آل عمران', englishName: 'Aal-E-Imran', verses: 200, type: 'مدنية'},
-                    {number: 4, name: 'النساء', englishName: 'An-Nisa', verses: 176, type: 'مدنية'},
-                    {number: 5, name: 'المائدة', englishName: 'Al-Maidah', verses: 120, type: 'مدنية'},
-                    {number: 6, name: 'الأنعام', englishName: 'Al-Anam', verses: 165, type: 'مكية'},
-                    {number: 7, name: 'الأعراف', englishName: 'Al-Araf', verses: 206, type: 'مكية'},
-                    {number: 8, name: 'الأنفال', englishName: 'Al-Anfal', verses: 75, type: 'مدنية'},
-                    {number: 9, name: 'التوبة', englishName: 'At-Tawbah', verses: 129, type: 'مدنية'},
-                    {number: 10, name: 'يونس', englishName: 'Yunus', verses: 109, type: 'مكية'},
-                    {number: 11, name: 'هود', englishName: 'Hud', verses: 123, type: 'مكية'},
-                    {number: 12, name: 'يوسف', englishName: 'Yusuf', verses: 111, type: 'مكية'},
-                    {number: 13, name: 'الرعد', englishName: 'Ar-Rad', verses: 43, type: 'مدنية'},
-                    {number: 14, name: 'إبراهيم', englishName: 'Ibrahim', verses: 52, type: 'مكية'},
-                    {number: 15, name: 'الحجر', englishName: 'Al-Hijr', verses: 99, type: 'مكية'},
-                    {number: 16, name: 'النحل', englishName: 'An-Nahl', verses: 128, type: 'مكية'},
-                    {number: 17, name: 'الإسراء', englishName: 'Al-Isra', verses: 111, type: 'مكية'},
-                    {number: 18, name: 'الكهف', englishName: 'Al-Kahf', verses: 110, type: 'مكية'},
-                    {number: 19, name: 'مريم', englishName: 'Maryam', verses: 98, type: 'مكية'},
-                    {number: 20, name: 'طه', englishName: 'Taha', verses: 135, type: 'مكية'},
-                    {number: 21, name: 'الأنبياء', englishName: 'Al-Anbya', verses: 112, type: 'مكية'},
-                    {number: 22, name: 'الحج', englishName: 'Al-Hajj', verses: 78, type: 'مدنية'},
-                    {number: 23, name: 'المؤمنون', englishName: 'Al-Muminun', verses: 118, type: 'مكية'},
-                    {number: 24, name: 'النور', englishName: 'An-Nur', verses: 64, type: 'مدنية'},
-                    {number: 25, name: 'الفرقان', englishName: 'Al-Furqan', verses: 77, type: 'مكية'},
-                    {number: 26, name: 'الشعراء', englishName: 'Ash-Shuara', verses: 227, type: 'مكية'},
-                    {number: 27, name: 'النمل', englishName: 'An-Naml', verses: 93, type: 'مكية'},
-                    {number: 28, name: 'القصص', englishName: 'Al-Qasas', verses: 88, type: 'مكية'},
-                    {number: 29, name: 'العنكبوت', englishName: 'Al-Ankabut', verses: 69, type: 'مكية'},
-                    {number: 30, name: 'الروم', englishName: 'Ar-Rum', verses: 60, type: 'مكية'},
-                    {number: 31, name: 'لقمان', englishName: 'Luqman', verses: 34, type: 'مكية'},
-                    {number: 32, name: 'السجدة', englishName: 'As-Sajdah', verses: 30, type: 'مكية'},
-                    {number: 33, name: 'الأحزاب', englishName: 'Al-Ahzab', verses: 73, type: 'مدنية'},
-                    {number: 34, name: 'سبأ', englishName: 'Saba', verses: 54, type: 'مكية'},
-                    {number: 35, name: 'فاطر', englishName: 'Fatir', verses: 45, type: 'مكية'},
-                    {number: 36, name: 'يس', englishName: 'Ya-Sin', verses: 83, type: 'مكية'},
-                    {number: 37, name: 'الصافات', englishName: 'As-Saffat', verses: 182, type: 'مكية'},
-                    {number: 38, name: 'ص', englishName: 'Sad', verses: 88, type: 'مكية'},
-                    {number: 39, name: 'الزمر', englishName: 'Az-Zumar', verses: 75, type: 'مكية'},
-                    {number: 40, name: 'غافر', englishName: 'Ghafir', verses: 85, type: 'مكية'},
-                    {number: 41, name: 'فصلت', englishName: 'Fussilat', verses: 54, type: 'مكية'},
-                    {number: 42, name: 'الشورى', englishName: 'Ash-Shuraa', verses: 53, type: 'مكية'},
-                    {number: 43, name: 'الزخرف', englishName: 'Az-Zukhruf', verses: 89, type: 'مكية'},
-                    {number: 44, name: 'الدخان', englishName: 'Ad-Dukhan', verses: 59, type: 'مكية'},
-                    {number: 45, name: 'الجاثية', englishName: 'Al-Jathiyah', verses: 37, type: 'مكية'},
-                    {number: 46, name: 'الأحقاف', englishName: 'Al-Ahqaf', verses: 35, type: 'مكية'},
-                    {number: 47, name: 'محمد', englishName: 'Muhammad', verses: 38, type: 'مدنية'},
-                    {number: 48, name: 'الفتح', englishName: 'Al-Fath', verses: 29, type: 'مدنية'},
-                    {number: 49, name: 'الحجرات', englishName: 'Al-Hujurat', verses: 18, type: 'مدنية'},
-                    {number: 50, name: 'ق', englishName: 'Qaf', verses: 45, type: 'مكية'},
-                    {number: 51, name: 'الذاريات', englishName: 'Adh-Dhariyat', verses: 60, type: 'مكية'},
-                    {number: 52, name: 'الطور', englishName: 'At-Tur', verses: 49, type: 'مكية'},
-                    {number: 53, name: 'النجم', englishName: 'An-Najm', verses: 62, type: 'مكية'},
-                    {number: 54, name: 'القمر', englishName: 'Al-Qamar', verses: 55, type: 'مكية'},
-                    {number: 55, name: 'الرحمن', englishName: 'Ar-Rahman', verses: 78, type: 'مكية'},
-                    {number: 56, name: 'الواقعة', englishName: 'Al-Waqiah', verses: 96, type: 'مكية'},
-                    {number: 57, name: 'الحديد', englishName: 'Al-Hadid', verses: 29, type: 'مدنية'},
-                    {number: 58, name: 'المجادلة', englishName: 'Al-Mujadila', verses: 22, type: 'مدنية'},
-                    {number: 59, name: 'الحشر', englishName: 'Al-Hashr', verses: 24, type: 'مدنية'},
-                    {number: 60, name: 'الممتحنة', englishName: 'Al-Mumtahanah', verses: 13, type: 'مدنية'},
-                    {number: 61, name: 'الصف', englishName: 'As-Saff', verses: 14, type: 'مدنية'},
-                    {number: 62, name: 'الجمعة', englishName: 'Al-Jumuah', verses: 11, type: 'مدنية'},
-                    {number: 63, name: 'المنافقون', englishName: 'Al-Munafiqun', verses: 11, type: 'مدنية'},
-                    {number: 64, name: 'التغابن', englishName: 'At-Taghabun', verses: 18, type: 'مدنية'},
-                    {number: 65, name: 'الطلاق', englishName: 'At-Talaq', verses: 12, type: 'مدنية'},
-                    {number: 66, name: 'التحريم', englishName: 'At-Tahrim', verses: 12, type: 'مدنية'},
-                    {number: 67, name: 'الملك', englishName: 'Al-Mulk', verses: 30, type: 'مكية'},
-                    {number: 68, name: 'القلم', englishName: 'Al-Qalam', verses: 52, type: 'مكية'},
-                    {number: 69, name: 'الحاقة', englishName: 'Al-Haqqah', verses: 52, type: 'مكية'},
-                    {number: 70, name: 'المعارج', englishName: 'Al-Maarij', verses: 44, type: 'مكية'},
-                    {number: 71, name: 'نوح', englishName: 'Nuh', verses: 28, type: 'مكية'},
-                    {number: 72, name: 'الجن', englishName: 'Al-Jinn', verses: 28, type: 'مكية'},
-                    {number: 73, name: 'المزمل', englishName: 'Al-Muzzammil', verses: 20, type: 'مكية'},
-                    {number: 74, name: 'المدثر', englishName: 'Al-Muddaththir', verses: 56, type: 'مكية'},
-                    {number: 75, name: 'القيامة', englishName: 'Al-Qiyamah', verses: 40, type: 'مكية'},
-                    {number: 76, name: 'الإنسان', englishName: 'Al-Insan', verses: 31, type: 'مدنية'},
-                    {number: 77, name: 'المرسلات', englishName: 'Al-Mursalat', verses: 50, type: 'مكية'},
-                    {number: 78, name: 'النبأ', englishName: 'An-Naba', verses: 40, type: 'مكية'},
-                    {number: 79, name: 'النازعات', englishName: 'An-Naziat', verses: 46, type: 'مكية'},
-                    {number: 80, name: 'عبس', englishName: 'Abasa', verses: 42, type: 'مكية'},
-                    {number: 81, name: 'التكوير', englishName: 'At-Takwir', verses: 29, type: 'مكية'},
-                    {number: 82, name: 'الانفطار', englishName: 'Al-Infitar', verses: 19, type: 'مكية'},
-                    {number: 83, name: 'المطففين', englishName: 'Al-Mutaffifin', verses: 36, type: 'مكية'},
-                    {number: 84, name: 'الانشقاق', englishName: 'Al-Inshiqaq', verses: 25, type: 'مكية'},
-                    {number: 85, name: 'البروج', englishName: 'Al-Buruj', verses: 22, type: 'مكية'},
-                    {number: 86, name: 'الطارق', englishName: 'At-Tariq', verses: 17, type: 'مكية'},
-                    {number: 87, name: 'الأعلى', englishName: 'Al-Ala', verses: 19, type: 'مكية'},
-                    {number: 88, name: 'الغاشية', englishName: 'Al-Ghashiyah', verses: 26, type: 'مكية'},
-                    {number: 89, name: 'الفجر', englishName: 'Al-Fajr', verses: 30, type: 'مكية'},
-                    {number: 90, name: 'البلد', englishName: 'Al-Balad', verses: 20, type: 'مكية'},
-                    {number: 91, name: 'الشمس', englishName: 'Ash-Shams', verses: 15, type: 'مكية'},
-                    {number: 92, name: 'الليل', englishName: 'Al-Layl', verses: 21, type: 'مكية'},
-                    {number: 93, name: 'الضحى', englishName: 'Ad-Duhaa', verses: 11, type: 'مكية'},
-                    {number: 94, name: 'الشرح', englishName: 'Ash-Sharh', verses: 8, type: 'مكية'},
-                    {number: 95, name: 'التين', englishName: 'At-Tin', verses: 8, type: 'مكية'},
-                    {number: 96, name: 'العلق', englishName: 'Al-Alaq', verses: 19, type: 'مكية'},
-                    {number: 97, name: 'القدر', englishName: 'Al-Qadr', verses: 5, type: 'مكية'},
-                    {number: 98, name: 'البينة', englishName: 'Al-Bayyinah', verses: 8, type: 'مدنية'},
-                    {number: 99, name: 'الزلزلة', englishName: 'Az-Zalzalah', verses: 8, type: 'مدنية'},
-                    {number: 100, name: 'العاديات', englishName: 'Al-Adiyat', verses: 11, type: 'مكية'},
-                    {number: 101, name: 'القارعة', englishName: 'Al-Qariah', verses: 11, type: 'مكية'},
-                    {number: 102, name: 'التكاثر', englishName: 'At-Takathur', verses: 8, type: 'مكية'},
-                    {number: 103, name: 'العصر', englishName: 'Al-Asr', verses: 3, type: 'مكية'},
-                    {number: 104, name: 'الهمزة', englishName: 'Al-Humazah', verses: 9, type: 'مكية'},
-                    {number: 105, name: 'الفيل', englishName: 'Al-Fil', verses: 5, type: 'مكية'},
-                    {number: 106, name: 'قريش', englishName: 'Quraysh', verses: 4, type: 'مكية'},
-                    {number: 107, name: 'الماعون', englishName: 'Al-Maun', verses: 7, type: 'مكية'},
-                    {number: 108, name: 'الكوثر', englishName: 'Al-Kawthar', verses: 3, type: 'مكية'},
-                    {number: 109, name: 'الكافرون', englishName: 'Al-Kafirun', verses: 6, type: 'مكية'},
-                    {number: 110, name: 'النصر', englishName: 'An-Nasr', verses: 3, type: 'مدنية'},
-                    {number: 111, name: 'المسد', englishName: 'Al-Masad', verses: 5, type: 'مكية'},
-                    {number: 112, name: 'الإخلاص', englishName: 'Al-Ikhlas', verses: 4, type: 'مكية'},
-                    {number: 113, name: 'الفلق', englishName: 'Al-Falaq', verses: 5, type: 'مكية'},
-                    {number: 114, name: 'الناس', englishName: 'An-Nas', verses: 6, type: 'مكية'}
-                ];
-                
-                this.init();
-            }
-            
-            init() {
-                this.populateSurahSelect();
-                this.setupEventListeners();
-                this.loadSurah(1);
-            }
-            
-            populateSurahSelect() {
-                this.surahSelect.innerHTML = '';
-                this.surahs.forEach(surah => {
-                    const option = document.createElement('option');
-                    option.value = surah.number;
-                    option.textContent = `${surah.number}. ${surah.name}`;
-                    this.surahSelect.appendChild(option);
-                });
-                this.surahSelect.value = this.currentSurah;
-            }
-            
-            setupEventListeners() {
-                this.playBtn.addEventListener('click', () => this.togglePlay());
-                this.nextBtn.addEventListener('click', () => this.nextSurah());
-                this.prevBtn.addEventListener('click', () => this.prevSurah());
-                this.playAllBtn.addEventListener('click', () => this.togglePlayAll());
-                this.surahSelect.addEventListener('change', (e) => this.loadSurah(parseInt(e.target.value)));
-                this.reciterSelect.addEventListener('change', (e) => this.changeReciter(e.target.value));
-                
-                // Search functionality
-                this.searchInput.addEventListener('input', (e) => this.performSearch(e.target.value));
-                this.searchInput.addEventListener('focus', () => {
-                    if (this.searchInput.value.trim()) {
-                        this.searchResults.style.display = 'block';
-                    }
-                });
-                
-                // Audio event listeners with enhanced error handling
-                this.audio.addEventListener('ended', () => this.onAudioEnded());
-                this.audio.addEventListener('loadstart', () => this.onAudioLoadStart());
-                this.audio.addEventListener('canplay', () => this.onAudioCanPlay());
-                this.audio.addEventListener('canplaythrough', () => this.onAudioCanPlayThrough());
-                this.audio.addEventListener('error', (e) => this.onAudioError(e));
-                this.audio.addEventListener('stalled', () => this.onAudioStalled());
-                this.audio.addEventListener('suspend', () => this.onAudioSuspend());
-                this.audio.addEventListener('waiting', () => this.onAudioWaiting());
-                this.audio.addEventListener('playing', () => this.onAudioPlaying());
-                this.audio.addEventListener('pause', () => this.onAudioPause());
-                
-                // Keyboard controls
-                document.addEventListener('keydown', (e) => {
-                    if (e.key.toLowerCase() === 'e' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-                        if (document.activeElement !== this.searchInput) {
-                            e.preventDefault();
-                            this.togglePlay();
-                        }
-                    }
-                    
-                    // Ctrl+F for search focus
-                    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-                        e.preventDefault();
-                        this.searchInput.focus();
-                    }
-                    
-                    // Escape to close search results
-                    if (e.key === 'Escape') {
-                        this.searchResults.style.display = 'none';
-                        this.searchInput.blur();
-                    }
-                });
-                
-                // Click outside to close search results
-                document.addEventListener('click', (e) => {
-                    if (!this.searchInput.contains(e.target) && !this.searchResults.contains(e.target)) {
-                        this.searchResults.style.display = 'none';
-                    }
-                });
-                
-                // Track user interaction for autoplay compliance
-                document.addEventListener('click', () => {
-                    this.userInteracted = true;
-                }, { once: true });
-                
-                document.addEventListener('touchstart', () => {
-                    this.userInteracted = true;
-                }, { once: true });
-            }
-            
-            async loadSurah(surahNumber) {
-                this.currentSurah = surahNumber;
-                this.surahSelect.value = surahNumber;
-                
-                const surah = this.surahs.find(s => s.number === surahNumber);
-                if (surah) {
-                    this.surahName.textContent = surah.name;
-                    this.surahDetails.textContent = `${surah.verses} آيات - ${surah.type}`;
-                }
-                
-                this.showLoading();
-                this.audioLoadAttempts = 0;
-                
-                try {
-                    await this.loadQuranText(surahNumber);
-                    await this.loadTimings(surahNumber);
-                    this.setupAudio(surahNumber);
-                } catch (error) {
-                    console.error('Error loading surah:', error);
-                    this.showError('حدث خطأ في تحميل السورة. يرجى المحاولة مرة أخرى.');
-                }
-            }
-            
-            async loadQuranText(surahNumber) {
-                try {
-                    // Try primary API first
-                    let response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar.uthmani`);
-                    
-                    if (!response.ok) {
-                        // Fallback to alternative API
-                        response = await fetch(`https://api.quran.com/api/v4/chapters/${surahNumber}/verses?language=ar&words=false&translation_fields=resource_name&fields=text_uthmani`);
-                    }
-                    
-                    if (!response.ok) throw new Error('Failed to fetch Quran text from all sources');
-                    
-                    const data = await response.json();
-                    
-                    // Handle different API response formats
-                    if (data.data && data.data.ayahs) {
-                        this.verses = data.data.ayahs;
-                    } else if (data.verses) {
-                        this.verses = data.verses.map(verse => ({
-                            text: verse.text_uthmani,
-                            numberInSurah: verse.verse_number,
-                            surah: { number: surahNumber }
-                        }));
-                    } else {
-                        throw new Error('Unexpected API response format');
-                    }
-                    
-                    this.displayVerses();
-                    this.indexVersesForSearch(surahNumber);
-                } catch (error) {
-                    console.error('Error loading Quran text:', error);
-                    this.showError('فشل في تحميل النص. جاري المحاولة مع مصدر آخر...');
-                    
-                    // Fallback: Load from local storage or show error
-                    setTimeout(() => {
-                        this.showError('تعذر تحميل النص من جميع المصادر. تأكد من اتصال الإنترنت.');
-                    }, 3000);
-                    throw error;
-                }
-            }
-            
-            indexVersesForSearch(surahNumber) {
-                const surah = this.surahs.find(s => s.number === surahNumber);
-                if (surah && this.verses) {
-                    this.verses.forEach((verse, index) => {
-                        const verseData = {
-                            surahNumber: surahNumber,
-                            surahName: surah.name,
-                            surahEnglishName: surah.englishName,
-                            verseNumber: verse.numberInSurah || (index + 1),
-                            text: verse.text,
-                            searchText: this.normalizeArabicForSearch(verse.text)
-                        };
-                        
-                        // Update or add to allVerses array
-                        const existingIndex = this.allVerses.findIndex(v => 
-                            v.surahNumber === surahNumber && v.verseNumber === verseData.verseNumber
-                        );
-                        
-                        if (existingIndex >= 0) {
-                            this.allVerses[existingIndex] = verseData;
-                        } else {
-                            this.allVerses.push(verseData);
-                        }
-                    });
-                }
-            }
-            
-            normalizeArabicForSearch(text) {
-                // Remove diacritics and normalize Arabic text for better search
-                return text
-                    .replace(/[\u064B-\u0652\u0670\u0640]/g, '') // Remove diacritics and tatweel
-                    .replace(/[أإآ]/g, 'ا') // Normalize alif variants
-                    .replace(/[ؤ]/g, 'و') // Normalize waw hamza
-                    .replace(/[ئ]/g, 'ي') // Normalize yaa hamza
-                    .replace(/[ة]/g, 'ه') // Normalize taa marbouta
-                    .toLowerCase()
-                    .trim();
-            }
-            
-            performSearch(query) {
-                if (!query || query.trim().length < 2) {
-                    this.searchResults.style.display = 'none';
-                    this.clearSearchHighlights();
-                    return;
-                }
-                
-                const normalizedQuery = this.normalizeArabicForSearch(query);
-                const results = [];
-                
-                // Search in surah names (Arabic and English)
-                this.surahs.forEach(surah => {
-                    const arabicMatch = this.normalizeArabicForSearch(surah.name).includes(normalizedQuery);
-                    const englishMatch = surah.englishName.toLowerCase().includes(query.toLowerCase());
-                    
-                    if (arabicMatch || englishMatch) {
-                        results.push({
-                            type: 'surah',
-                            surahNumber: surah.number,
-                            surahName: surah.name,
-                            surahEnglishName: surah.englishName,
-                            matchText: surah.name,
-                            score: arabicMatch ? 10 : 5
-                        });
-                    }
-                });
-                
-                // Search in verse text
-                this.allVerses.forEach(verse => {
-                    if (verse.searchText.includes(normalizedQuery)) {
-                        const highlightedText = this.highlightSearchTerm(verse.text, query);
-                        results.push({
-                            type: 'verse',
-                            ...verse,
-                            matchText: highlightedText,
-                            score: 1
-                        });
-                    }
-                });
-                
-                // Sort results by relevance
-                results.sort((a, b) => b.score - a.score);
-                
-                this.displaySearchResults(results.slice(0, 10)); // Show top 10 results
-            }
-            
-            highlightSearchTerm(text, query) {
-                if (!query || query.length < 2) return text;
-                
-                // Create a regex that matches the query (case insensitive, with diacritics flexibility)
-                const normalizedQuery = this.normalizeArabicForSearch(query);
-                const words = normalizedQuery.split(/\s+/).filter(word => word.length > 1);
-                
-                let highlightedText = text;
-                words.forEach(word => {
-                    // Create a flexible regex that matches the word with optional diacritics
-                    const flexiblePattern = word.split('').map(char => {
-                        if (/[ا-ي]/.test(char)) {
-                            return char + '[\\u064B-\\u0652\\u0670]*'; // Add optional diacritics
-                        }
-                        return char;
-                    }).join('');
-                    
-                    const regex = new RegExp(`(${flexiblePattern})`, 'gi');
-                    highlightedText = highlightedText.replace(regex, '<span class="search-highlight">$1</span>');
-                });
-                
-                return highlightedText;
-            }
-            
-            displaySearchResults(results) {
-                if (results.length === 0) {
-                    this.searchResults.innerHTML = '<div class="search-result-item">لا توجد نتائج</div>';
-                    this.searchResults.style.display = 'block';
-                    return;
-                }
-                
-                let html = '';
-                results.forEach(result => {
-                    if (result.type === 'surah') {
-                        html += `
-                            <div class="search-result-item" onclick="quranPlayer.navigateToSurah(${result.surahNumber})">
-                                <div class="search-result-surah">سورة ${result.surahName}</div>
-                                <div class="search-result-text">${result.surahEnglishName}</div>
-                            </div>
-                        `;
-                    } else {
-                        html += `
-                            <div class="search-result-item" onclick="quranPlayer.navigateToVerse(${result.surahNumber}, ${result.verseNumber})">
-                                <div class="search-result-surah">سورة ${result.surahName} - آية ${result.verseNumber}</div>
-                                <div class="search-result-text">${result.matchText}</div>
-                            </div>
-                        `;
-                    }
-                });
-                
-                this.searchResults.innerHTML = html;
-                this.searchResults.style.display = 'block';
-            }
-            
-            navigateToSurah(surahNumber) {
-                this.loadSurah(surahNumber);
-                this.searchResults.style.display = 'none';
-                this.clearSearchHighlights();
-            }
-            
-            navigateToVerse(surahNumber, verseNumber) {
-                if (this.currentSurah !== surahNumber) {
-                    this.loadSurah(surahNumber);
-                    // Wait for surah to load, then highlight verse
-                    setTimeout(() => {
-                        this.highlightSearchedVerse(verseNumber);
-                    }, 1000);
-                } else {
-                    this.highlightSearchedVerse(verseNumber);
-                }
-                this.searchResults.style.display = 'none';
-            }
-            
-            highlightSearchedVerse(verseNumber) {
-                this.clearSearchHighlights();
-                const verseElement = document.querySelector(`[data-verse="${verseNumber}"]`);
-                if (verseElement) {
-                    verseElement.classList.add('search-matched');
-                    verseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // Remove highlight after 5 seconds
-                    setTimeout(() => {
-                        verseElement.classList.remove('search-matched');
-                    }, 5000);
-                }
-            }
-            
-            clearSearchHighlights() {
-                document.querySelectorAll('.verse.search-matched').forEach(verse => {
-                    verse.classList.remove('search-matched');
-                });
-            }
-            
-            async loadTimings(surahNumber) {
-                try {
-                    const paddedNumber = surahNumber.toString().padStart(3, '0');
-                    const response = await fetch(`timings/${paddedNumber}.json`);
-                    if (response.ok) {
-                        this.timings = await response.json();
-                        console.log(`Loaded timings for surah ${surahNumber}`);
-                    } else {
-                        this.timings = null;
-                        console.log(`No timings available for surah ${surahNumber}`);
-                    }
-                } catch (error) {
-                    console.log(`No timings file found for surah ${surahNumber}`);
-                    this.timings = null;
-                }
-            }
-            
-            displayVerses() {
-                let html = '';
-                this.verses.forEach((verse, index) => {
-                    html += `<div class="verse" data-verse="${index + 1}">
-                        ${verse.text}
-                        <span class="verse-number">${verse.numberInSurah || (index + 1)}</span>
-                    </div>`;
-                });
-                this.quranText.innerHTML = html;
-            }
-            
-            setupAudio(surahNumber) {
-                const paddedNumber = surahNumber.toString().padStart(3, '0');
-                const audioUrl = `https://everyayah.com/data/${this.currentReciter}/${paddedNumber}.mp3`;
-                
-                console.log('Setting audio URL:', audioUrl);
-                this.showAudioStatus('جاري تحميل الملف الصوتي...');
-                
-                // Reset audio element
-                this.audio.pause();
-                this.audio.currentTime = 0;
-                this.audio.src = audioUrl;
-                this.audio.load(); // Force reload
-                
-                if (this.timings) {
-                    this.showStatus('تم تحميل ملف التوقيت - سيتم تمييز الآيات أثناء التلاوة');
-                } else {
-                    this.showStatus('لا يتوفر ملف توقيت لهذه السورة/القارئ - ستعمل التلاوة بدون تمييز الآيات');
-                }
-            }
-            
-            changeReciter(reciter) {
-                this.currentReciter = reciter;
-                this.setupAudio(this.currentSurah);
-                console.log('Changed reciter to:', reciter);
-            }
-            
-            async togglePlay() {
-                if (!this.userInteracted) {
-                    this.showError('يرجى النقر أولاً لتفعيل التشغيل');
-                    this.showAudioStatus('يتطلب تفاعل المستخدم للتشغيل');
-                    return;
-                }
-                
-                if (this.isPlaying) {
-                    this.pause();
-                } else {
-                    await this.play();
-                }
-            }
-            
-            async play() {
-                try {
-                    this.showAudioStatus('جاري بدء التشغيل...');
-                    
-                    // Ensure audio is ready
-                    if (this.audio.readyState < 2) {
-                        await new Promise((resolve, reject) => {
-                            const timeout = setTimeout(() => {
-                                reject(new Error('Audio load timeout'));
-                            }, 10000);
-                            
-                            const onCanPlay = () => {
-                                clearTimeout(timeout);
-                                this.audio.removeEventListener('canplay', onCanPlay);
-                                this.audio.removeEventListener('error', onError);
-                                resolve();
-                            };
-                            
-                            const onError = (e) => {
-                                clearTimeout(timeout);
-                                this.audio.removeEventListener('canplay', onCanPlay);
-                                this.audio.removeEventListener('error', onError);
-                                reject(e);
-                            };
-                            
-                            this.audio.addEventListener('canplay', onCanPlay);
-                            this.audio.addEventListener('error', onError);
-                        });
-                    }
-                    
-                    await this.audio.play();
-                    this.isPlaying = true;
-                    this.playBtn.textContent = '⏸ إيقاف';
-                    this.startHighlighting();
-                    this.showAudioStatus('جاري التشغيل');
-                    console.log('Audio started playing successfully');
-                } catch (error) {
-                    console.error('Error playing audio:', error);
-                    this.audioLoadAttempts++;
-                    
-                    if (this.audioLoadAttempts < this.maxAudioLoadAttempts) {
-                        this.showError(`فشل في تشغيل الصوت. جاري المحاولة ${this.audioLoadAttempts + 1}/${this.maxAudioLoadAttempts}...`);
-                        this.showAudioStatus(`محاولة ${this.audioLoadAttempts + 1}/${this.maxAudioLoadAttempts}`);
-                        
-                        // Retry with delay
-                        setTimeout(() => {
-                            this.setupAudio(this.currentSurah);
-                            setTimeout(() => this.play(), 1000);
-                        }, 2000);
-                    } else {
-                        this.showError('فشل في تشغيل الصوت بعد عدة محاولات. تأكد من اتصال الإنترنت أو جرب قارئ آخر.');
-                        this.showAudioStatus('فشل في التشغيل');
-                    }
-                }
-            }
-            
-            pause() {
-                this.audio.pause();
-                this.isPlaying = false;
-                this.playBtn.textContent = '▶ تشغيل';
-                this.stopHighlighting();
-                this.showAudioStatus('متوقف');
-                console.log('Audio paused');
-            }
-            
-            nextSurah() {
-                if (this.currentSurah < 114) {
-                    this.loadSurah(this.currentSurah + 1);
-                }
-            }
-            
-            prevSurah() {
-                if (this.currentSurah > 1) {
-                    this.loadSurah(this.currentSurah - 1);
-                }
-            }
-            
-            togglePlayAll() {
-                this.isPlayingAll = !this.isPlayingAll;
-                if (this.isPlayingAll) {
-                    this.playAllBtn.textContent = 'إيقاف الكل';
-                    this.playAllBtn.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
-                    if (!this.isPlaying) {
-                        this.togglePlay();
-                    }
-                } else {
-                    this.playAllBtn.textContent = 'تشغيل الكل';
-                    this.playAllBtn.style.background = '';
-                }
-            }
-            
-            // Enhanced audio event handlers
-            onAudioLoadStart() {
-                console.log('Audio loading started');
-                this.showAudioStatus('بدء تحميل الملف...');
-            }
-            
-            onAudioCanPlay() {
-                console.log('Audio can play');
-                this.showAudioStatus('جاهز للتشغيل');
-                this.audioLoadAttempts = 0; // Reset attempts on success
-            }
-            
-            onAudioCanPlayThrough() {
-                console.log('Audio can play through');
-                this.showAudioStatus('تم تحميل الملف بالكامل');
-            }
-            
-            onAudioPlaying() {
-                console.log('Audio is playing');
-                this.showAudioStatus('جاري التشغيل');
-            }
-            
-            onAudioPause() {
-                console.log('Audio paused');
-                this.showAudioStatus('متوقف');
-            }
-            
-            onAudioWaiting() {
-                console.log('Audio waiting for data');
-                this.showAudioStatus('انتظار البيانات...');
-            }
-            
-            onAudioStalled() {
-                console.log('Audio stalled');
-                this.showAudioStatus('توقف مؤقت - جاري إعادة المحاولة...');
-            }
-            
-            onAudioSuspend() {
-                console.log('Audio suspended');
-                this.showAudioStatus('تم تعليق التحميل');
-            }
-            
-            onAudioEnded() {
-                this.isPlaying = false;
-                this.playBtn.textContent = '▶ تشغيل';
-                this.stopHighlighting();
-                this.showAudioStatus('انتهت التلاوة');
-                
-                if (this.isPlayingAll && this.currentSurah < 114) {
-                    this.showAudioStatus('الانتقال للسورة التالية...');
-                    setTimeout(() => {
-                        this.nextSurah();
-                        setTimeout(() => {
-                            if (this.isPlayingAll) {
-                                this.togglePlay();
-                            }
-                        }, 1500);
-                    }, 1000);
-                } else if (this.isPlayingAll) {
-                    this.togglePlayAll(); // Stop play all when reaching the end
-                    this.showAudioStatus('انتهى تشغيل القرآن الكريم');
-                }
-            }
-            
-            onAudioError(e) {
-                console.error('Audio error:', e);
-                const error = e.target.error;
-                let errorMessage = 'خطأ في تحميل الملف الصوتي';
-                
-                if (error) {
-                    switch (error.code) {
-                        case error.MEDIA_ERR_ABORTED:
-                            errorMessage = 'تم إلغاء تحميل الملف الصوتي';
-                            break;
-                        case error.MEDIA_ERR_NETWORK:
-                            errorMessage = 'خطأ في الشبكة أثناء تحميل الملف';
-                            break;
-                        case error.MEDIA_ERR_DECODE:
-                            errorMessage = 'خطأ في فك تشفير الملف الصوتي';
-                            break;
-                        case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                            errorMessage = 'تنسيق الملف الصوتي غير مدعوم';
-                            break;
-                    }
-                }
-                
-                this.showError(errorMessage + '. جاري المحاولة مع السورة التالية...');
-                this.showAudioStatus('خطأ في الملف الصوتي');
-                
-                if (this.isPlayingAll && this.currentSurah < 114) {
-                    setTimeout(() => {
-                        this.nextSurah();
-                        setTimeout(() => {
-                            if (this.isPlayingAll) {
-                                this.togglePlay();
-                            }
-                        }, 2000);
-                    }, 1500);
-                }
-            }
-            
-            startHighlighting() {
-                if (!this.timings || !this.timings.starts) return;
-                
-                this.highlightInterval = setInterval(() => {
-                    const currentTime = this.audio.currentTime;
-                    const currentVerseIndex = this.getCurrentVerseIndex(currentTime);
-                    
-                    if (currentVerseIndex !== -1) {
-                        this.highlightVerse(currentVerseIndex);
-                    }
-                }, 100);
-            }
-            
-            stopHighlighting() {
-                if (this.highlightInterval) {
-                    clearInterval(this.highlightInterval);
-                    this.highlightInterval = null;
-                }
-                this.clearHighlights();
-            }
-            
-            getCurrentVerseIndex(currentTime) {
-                if (!this.timings || !this.timings.starts) return -1;
-                
-                const starts = this.timings.starts;
-                for (let i = 0; i < starts.length - 1; i++) {
-                    if (currentTime >= starts[i] && currentTime < starts[i + 1]) {
-                        return i;
-                    }
-                }
-                
-                // Last verse
-                if (currentTime >= starts[starts.length - 1]) {
-                    return starts.length - 1;
-                }
-                
-                return -1;
-            }
-            
-            highlightVerse(verseIndex) {
-                this.clearHighlights();
-                const verseElement = document.querySelector(`[data-verse="${verseIndex + 1}"]`);
-                if (verseElement) {
-                    verseElement.classList.add('highlighted');
-                    verseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-            
-            clearHighlights() {
-                document.querySelectorAll('.verse.highlighted').forEach(verse => {
-                    verse.classList.remove('highlighted');
-                });
-            }
-            
-            showLoading() {
-                this.quranText.innerHTML = '<div class="loading">جاري تحميل النص الكريم...</div>';
-            }
-            
-            showError(message) {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error-message';
-                errorDiv.textContent = message;
-                this.quranText.insertBefore(errorDiv, this.quranText.firstChild);
-                
-                setTimeout(() => {
-                    if (errorDiv.parentNode) {
-                        errorDiv.parentNode.removeChild(errorDiv);
-                    }
-                }, 5000);
-            }
-            
-            showStatus(message) {
-                // Remove existing status messages
-                document.querySelectorAll('.status-message').forEach(el => el.remove());
-                
-                const statusDiv = document.createElement('div');
-                statusDiv.className = 'status-message';
-                statusDiv.textContent = message;
-                this.quranText.insertBefore(statusDiv, this.quranText.firstChild);
-                
-                setTimeout(() => {
-                    if (statusDiv.parentNode) {
-                        statusDiv.parentNode.removeChild(statusDiv);
-                    }
-                }, 4000);
-            }
-            
-            showAudioStatus(message) {
-                this.audioStatus.textContent = message;
-                this.audioStatus.style.display = 'block';
-                
-                // Auto-hide after 3 seconds unless it's an error or playing status
-                if (!message.includes('خطأ') && !message.includes('جاري التشغيل')) {
-                    setTimeout(() => {
-                        this.audioStatus.style.display = 'none';
-                    }, 3000);
-                }
-            }
+  </div>
+
+  <div id="audio-status" class="audio-status" aria-live="polite"></div>
+
+  <script>
+    /****************************************************************
+     * Single-file final index.html
+     * - Search suggestions (Arabic + English partial matches)
+     * - Language switch updates all UI strings and reloads verses
+     * - Audio fallback: local -> everyayah (Yasir) -> mp3quran fallback
+     * - Playback speed & volume controls
+     * - Surah info: number, ayahs count, revelation type
+     *
+     * Notes on deploying audio to work on all devices:
+     *  - Host local files (audio/001.mp3 ...) on the same server to avoid CORS.
+     *  - If relying on external hosts (everyayah.com), ensure they permit cross-origin access.
+     *  - For best reliability: host the reciter files (Yasir) on your server (or use a CDN) and keep the filenames padded 001.mp3 ... 114.mp3
+     ****************************************************************/
+
+    // -------------------------
+    // Data: Arabic & English surah names
+    // -------------------------
+    const surahNamesAr = [ /* 114 Arabic */ 
+      'الفاتحة','البقرة','آل عمران','النساء','المائدة','الأنعام','الأعراف','الأنفال','التوبة','يونس',
+      'هود','يوسف','الرعد','إبراهيم','الحجر','النحل','الإسراء','الكهف','مريم','طه',
+      'الأنبياء','الحج','المؤمنون','النور','الفرقان','الشعراء','النمل','القصص','العنكبوت','الروم',
+      'لقمان','السجدة','الأحزاب','سبأ','فاطر','يس','الصافات','ص','الزمر','غافر',
+      'فصلت','الشورى','الزخرف','الدخان','الجاثية','الأحقاف','محمد','الفتح','الحجرات','ق',
+      'الذاريات','الطور','النجم','القمر','الرحمن','الواقعة','الحديد','المجادلة','الحشر','الممتحنة',
+      'الصف','الجمعة','المنافقون','التغابن','الطلاق','التحريم','الملك','القلم','الحاقة','المعارج',
+      'نوح','الجن','المزمل','المدثر','القيامة','الإنسان','المرسلات','النبأ','النازعات','عبس',
+      'التكوير','الانفطار','المطففين','الانشقاق','البروج','الطارق','الأعلى','الغاشية','الفجر','البلد',
+      'الشمس','الليل','الضحى','الشرح','التين','العلق','القدر','البينة','الزلزلة','العاديات',
+      'القارعة','التكاثر','العصر','الهمزة','الفيل','قريش','الماعون','الكوثر','الكافرون','النصر',
+      'المسد','الإخلاص','الفلق','الناس'
+    ];
+
+    const surahNamesEn = [ /* 114 English */ 
+      'Al-Fatihah','Al-Baqarah','Aal-e-Imran','An-Nisa','Al-Maidah','Al-Anam','Al-Araf','Al-Anfal','At-Tawbah','Yunus',
+      'Hud','Yusuf','Ar-Rad','Ibrahim','Al-Hijr','An-Nahl','Al-Isra','Al-Kahf','Maryam','Taha',
+      'Al-Anbiya','Al-Hajj','Al-Muminun','An-Nur','Al-Furqan','Ash-Shuara','An-Naml','Al-Qasas','Al-Ankabut','Ar-Rum',
+      'Luqman','As-Sajdah','Al-Ahzab','Saba','Fatir','Ya-Sin','As-Saffat','Sad','Az-Zumar','Ghafir',
+      'Fussilat','Ash-Shuraa','Az-Zukhruf','Ad-Dukhan','Al-Jathiyah','Al-Ahqaf','Muhammad','Al-Fath','Al-Hujurat','Qaf',
+      'Adh-Dhariyat','At-Tur','An-Najm','Al-Qamar','Ar-Rahman','Al-Waqiah','Al-Hadid','Al-Mujadila','Al-Hashr','Al-Mumtahanah',
+      'As-Saff','Al-Jumuah','Al-Munafiqun','At-Taghabun','At-Talaq','At-Tahrim','Al-Mulk','Al-Qalam','Al-Haqqah','Al-Ma\'arij',
+      'Nuh','Al-Jinn','Al-Muzzammil','Al-Muddathir','Al-Qiyamah','Al-Insan','Al-Mursalat','An-Naba','An-Naziat','Abasa',
+      'At-Takwir','Al-Infitar','Al-Mutaffifin','Al-Inshiqaq','Al-Buruj','At-Tariq','Al-Ala','Al-Ghashiyah','Al-Fajr','Al-Balad',
+      'Ash-Shams','Al-Layl','Ad-Duha','Ash-Sharh','At-Tin','Al-Alaq','Al-Qadr','Al-Bayyinah','Az-Zalzalah','Al-Adiyat',
+      'Al-Qariah','At-Takathur','Al-Asr','Al-Humazah','Al-Fil','Quraysh','Al-Maun','Al-Kawthar','Al-Kafirun','An-Nasr',
+      'Al-Masad','Al-Ikhlas','Al-Falaq','An-Nas'
+    ];
+
+    // -------------------------
+    // UI & state
+    // -------------------------
+    const surahSelect = document.getElementById('surah-select');
+    const audioEl = document.getElementById('audio-player');
+    const playBtn = document.getElementById('play-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const reciterSelect = document.getElementById('reciter-select');
+    const quranText = document.getElementById('quran-text');
+    const surahNameEl = document.getElementById('surah-name');
+    const surahDetailsEl = document.getElementById('surah-details');
+    const surahExtraEl = document.getElementById('surah-extra');
+    const suggestionsBox = document.getElementById('suggestions');
+    const searchInput = document.getElementById('search-input');
+
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsBtn = document.getElementById('settings-btn');
+    const closeSettingsBtn = document.getElementById('close-settings');
+    const translationSelect = document.getElementById('translation');
+    const speedSelect = document.getElementById('speed-select');
+    const volumeRange = document.getElementById('volume-range');
+    const volumeValue = document.getElementById('volume-value');
+    const audioStatus = document.getElementById('audio-status');
+
+    // localized UI text
+    const uiText = {
+      ar: {
+        appTitle: 'القرآن الكريم',
+        appSub: 'تلاوة مباركة',
+        searchLabel: 'البحث في القرآن',
+        searchPlaceholder: 'اكتب كلمة أو اسم سورة...',
+        reciterLabel: 'القارئ',
+        surahLabel: 'السورة',
+        play: '▶ تشغيل',
+        pause: '⏸ إيقاف',
+        prev: 'السابقة',
+        next: 'التالية',
+        settings: '⚙️ الإعدادات',
+        loading: 'جاري تحميل النص الكريم...',
+        ayahsPrefix: 'عدد الآيات',
+        revelationPrefix: 'مكان النزول',
+        settingsTitle: 'الإعدادات',
+        speedLabel: 'سرعة التشغيل',
+        volumeLabel: 'مستوى الصوت',
+        langLabel: 'اللغة / Language',
+        errorLoad: 'تعذر تحميل نص السورة. تحقق من الإنترنت أو أعد المحاولة.',
+        tryingAudio: 'جاري محاولة مصدر الصوت...',
+        playingLocal: 'تشغيل من الملفات المحلية',
+        playingRemote: 'تشغيل من المصدر البعيد',
+        audioError: 'خطأ في تحميل الصوت'
+      },
+      en: {
+        appTitle: 'Quran Recitation',
+        appSub: 'Blessed Recitation',
+        searchLabel: 'Search the Quran',
+        searchPlaceholder: 'Type a word or surah name...',
+        reciterLabel: 'Reciter',
+        surahLabel: 'Surah',
+        play: '▶ Play',
+        pause: '⏸ Pause',
+        prev: 'Previous',
+        next: 'Next',
+        settings: '⚙ Settings',
+        loading: 'Loading verses...',
+        ayahsPrefix: 'Ayahs',
+        revelationPrefix: 'Revelation',
+        settingsTitle: 'Settings',
+        speedLabel: 'Playback speed',
+        volumeLabel: 'Volume',
+        langLabel: 'Language',
+        errorLoad: 'Failed to load surah text. Check your internet or try again.',
+        tryingAudio: 'Trying audio source...',
+        playingLocal: 'Playing from local files',
+        playingRemote: 'Playing from remote source',
+        audioError: 'Audio load error'
+      }
+    };
+
+    let state = {
+      currentSurah: 1,
+      language: 'ar', // 'ar' or 'en'
+      isPlaying: false
+    };
+
+    // -------------------------
+    // Helpers & normalization
+    // -------------------------
+    function pad3(n){ return String(n).padStart(3,'0'); }
+    function everyAyahUrl(reciter, surah){ return `https://everyayah.com/data/${reciter}/${pad3(surah)}.mp3`; }
+    function mp3quranUrl(reciter, surah){ return `https://server8.mp3quran.net/${reciter}/${pad3(surah)}.mp3`; }
+    function localAudioUrl(surah){ return `audio/${pad3(surah)}.mp3`; } // optional local fallback
+
+    function normalizeForSearch(s){
+      return (s||'').toString().toLowerCase().replace(/[\u064B-\u0652]/g,'') // remove arabic diacritics
+        .replace(/[\s\-\_\'\"\:\,\.]/g,'').normalize('NFKD');
+    }
+    function normalizeEn(s){ return (s||'').toString().toLowerCase().replace(/[\s\-\_\'\"\:\,\.]/g,''); }
+    function isProbablyArabic(text){
+      return /[\u0600-\u06FF]/.test(text);
+    }
+
+    // -------------------------
+    // Populate surah select based on language
+    // -------------------------
+    function populateSurahSelect(){
+      surahSelect.innerHTML = '';
+      const names = state.language === 'ar' ? surahNamesAr : surahNamesEn;
+      for (let i = 0; i < names.length; i++){
+        const opt = document.createElement('option');
+        opt.value = i + 1;
+        // show both for clarity: "1. الفاتحة / Al-Fatihah" while keeping RTL feel.
+        opt.textContent = state.language === 'ar' ? `${i+1}. ${names[i]}` : `${i+1}. ${names[i]}`;
+        surahSelect.appendChild(opt);
+      }
+      surahSelect.value = state.currentSurah;
+    }
+
+    // -------------------------
+    // Update UI labels when language changes
+    // -------------------------
+    function updateUILabels(){
+      const t = uiText[state.language];
+      document.getElementById('app-title').textContent = t.appTitle;
+      document.getElementById('app-sub').textContent = t.appSub;
+      document.getElementById('search-label').textContent = t.searchLabel;
+      searchInput.placeholder = t.searchPlaceholder;
+      document.getElementById('reciter-label').textContent = t.reciterLabel;
+      document.getElementById('surah-label').textContent = t.surahLabel;
+      playBtn.textContent = state.isPlaying ? t.pause : t.play;
+      prevBtn.textContent = t.prev;
+      nextBtn.textContent = t.next;
+      settingsBtn.textContent = t.settings;
+      document.getElementById('settings-title').textContent = t.settingsTitle;
+      document.getElementById('speed-label').textContent = t.speedLabel + ' / ' + (state.language === 'ar' ? 'سرعة التشغيل' : '');
+      document.getElementById('volume-label').textContent = t.volumeLabel + ' / Volume';
+      document.getElementById('lang-label').textContent = t.langLabel;
+      document.getElementById('loading-text').textContent = t.loading;
+    }
+
+    // -------------------------
+    // Surah header (name + details)
+    // -------------------------
+    function showSurahHeader(info){
+      const arName = surahNamesAr[state.currentSurah - 1] || '--';
+      const enName = surahNamesEn[state.currentSurah - 1] || arName;
+      surahNameEl.textContent = state.language === 'ar' ? arName : enName;
+      surahDetailsEl.textContent = state.language === 'ar'
+        ? `سورة رقم ${state.currentSurah}`
+        : `Surah #${state.currentSurah}`;
+      if(info && typeof info === 'object'){
+        const ayahs = info.numberOfAyahs || info.ayahsCount || (info.ayahs && info.ayahs.length) || '--';
+        let rev = info.revelationType || info.revelation || '--';
+        // normalize revealing wording to locally friendly
+        if(state.language === 'en'){
+          if(rev === 'مكية') rev = 'Meccan';
+          if(rev === 'مدنية') rev = 'Medinan';
+        } else {
+          if(rev === 'Meccan') rev = 'مكية';
+          if(rev === 'Medinan') rev = 'مدنية';
         }
-        
-        // Global instance for search result navigation
-        let quranPlayer;
-        
-        // Initialize the player when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            quranPlayer = new QuranPlayer();
-        });
-    </script>
+        surahExtraEl.textContent = state.language === 'ar'
+          ? `عدد الآيات: ${ayahs} | مكان النزول: ${rev}`
+          : `Ayahs: ${ayahs} | Revelation: ${rev}`;
+      } else {
+        surahExtraEl.textContent = '--';
+      }
+    }
+
+    // -------------------------
+    // Audio status small notifier
+    // -------------------------
+    function showAudioStatus(msg, ms = 2200){
+      audioStatus.textContent = msg;
+      audioStatus.style.display = 'block';
+      clearTimeout(audioStatus._t);
+      audioStatus._t = setTimeout(()=>{ audioStatus.style.display = 'none'; }, ms);
+    }
+
+    // -------------------------
+    // Load surah text (respects language state)
+    // -------------------------
+    async function loadSurah(num){
+      if(!num) num = 1;
+      state.currentSurah = Number(num);
+      surahSelect.value = state.currentSurah;
+      showSurahHeader(null); // quick header update
+      quranText.innerHTML = `<div class="loading">${uiText[state.language].loading}</div>`;
+
+      const endpoint = state.language === 'ar'
+        ? `https://api.alquran.cloud/v1/surah/${state.currentSurah}/ar.uthmani`
+        : `https://api.alquran.cloud/v1/surah/${state.currentSurah}/en.asad`;
+
+      try {
+        const r = await fetch(endpoint);
+        if(!r.ok) throw new Error('API failed');
+        const d = await r.json();
+        if(d && d.data && Array.isArray(d.data.ayahs)) {
+          const ayahs = d.data.ayahs;
+          const html = ayahs.map((a, idx) => {
+            const text = a.text || '';
+            const num = a.numberInSurah || (idx + 1);
+            return `<div class="verse" data-verse="${num}"><span class="verse-number">${num}</span>${text}</div>`;
+          }).join('\n');
+          quranText.innerHTML = html;
+          showSurahHeader(d.data);
+        } else {
+          // fallback message
+          quranText.innerHTML = `<div class="loading">${uiText[state.language].errorLoad}</div>`;
+        }
+      } catch (err) {
+        console.error('loadSurah error:', err);
+        quranText.innerHTML = `<div class="loading">${uiText[state.language].errorLoad}</div>`;
+      }
+
+      // setup audio for this surah (but don't auto-play)
+      setupAudio(state.currentSurah);
+    }
+
+    // -------------------------
+    // Audio setup with sequential fallback
+    // local -> everyayah -> mp3quran
+    // -------------------------
+    function setupAudio(surahNumber){
+      // clear existing event handlers used for fallback
+      audioEl.onerror = null;
+      audioEl.oncanplay = null;
+
+      audioEl.pause();
+      audioEl.removeAttribute('src');
+      audioEl.currentTime = 0;
+      audioEl.crossOrigin = 'anonymous';
+
+      const reciter = reciterSelect.value || 'Yasir_Al_Dosari_64kbps';
+      const candidates = [
+        localAudioUrl(surahNumber),            // local (if user hosts audio/001.mp3 ...)
+        everyAyahUrl(reciter, surahNumber),   // everyayah.com
+        mp3quranUrl(reciter, surahNumber)     // mp3quran fallback
+      ];
+
+      let idx = 0;
+      // small helper to try next source
+      const tryNext = () => {
+        if(idx >= candidates.length){
+          showAudioStatus(uiText[state.language].audioError, 3000);
+          return;
+        }
+        const url = candidates[idx++];
+        audioEl.src = url;
+        audioEl.load();
+        // notify user a bit about attempt, but short
+        showAudioStatus(uiText[state.language].tryingAudio, 900);
+      };
+
+      // when audio can play, we mark it okay
+      const onCanPlay = () => {
+        showAudioStatus(state.language === 'ar' ? uiText[state.language].playingRemote : uiText[state.language].playingRemote, 1400);
+        // remove the temporary handlers (we still keep global listeners elsewhere)
+        audioEl.onerror = globalAudioErrorHandler;
+        audioEl.oncanplay = null;
+      };
+
+      // temporary error handler to try next candidate
+      const tempErrorHandler = (e) => {
+        // try next source
+        console.warn('audio source failed, trying next...', e);
+        tryNext();
+      };
+
+      // global handler saved for later usage
+      const globalAudioErrorHandler = (e) => {
+        console.error('audio error event:', e);
+        showAudioStatus(uiText[state.language].audioError, 2500);
+      };
+
+      audioEl.oncanplay = onCanPlay;
+      audioEl.onerror = tempErrorHandler;
+
+      // Start trying
+      tryNext();
+    }
+
+    // -------------------------
+    // Play / Pause toggle
+    // -------------------------
+    async function togglePlay(){
+      const t = uiText[state.language];
+      if(state.isPlaying){
+        audioEl.pause();
+        state.isPlaying = false;
+        playBtn.textContent = t.play;
+      } else {
+        // ensure audio src exists
+        if(!audioEl.src || audioEl.src === ''){
+          setupAudio(state.currentSurah);
+        }
+        try {
+          await audioEl.play();
+          state.isPlaying = true;
+          playBtn.textContent = uiText[state.language].pause;
+          showAudioStatus(state.language === 'ar' ? 'جاري التشغيل...' : 'Playing...', 1500);
+        } catch(err) {
+          console.error('play failed:', err);
+          showAudioStatus(state.language === 'ar' ? 'فشل في التشغيل — انقر في الصفحة للسماح' : 'Play failed — click on page to allow', 3000);
+        }
+      }
+    }
+
+    // -------------------------
+    // Prev / Next handlers
+    // -------------------------
+    function prevSurah(){
+      if(state.currentSurah > 1){
+        loadSurah(state.currentSurah - 1);
+      }
+    }
+    function nextSurah(){
+      if(state.currentSurah < 114){
+        loadSurah(state.currentSurah + 1);
+      }
+    }
+
+    // -------------------------
+    // Search / Suggestions (Arabic & English)
+    // -------------------------
+    function buildSuggestions(query){
+      const q = (query || '').trim();
+      if(!q) return [];
+      const qLower = q.toLowerCase();
+      const qNormArabic = normalizeForSearch(q);
+      const qNormEn = normalizeEn(q);
+      const results = [];
+
+      // search both arrays
+      for(let i=0;i<114;i++){
+        const ar = surahNamesAr[i];
+        const en = surahNamesEn[i];
+        const arNorm = normalizeForSearch(ar);
+        const enNorm = normalizeEn(en);
+
+        const matchArabic = arNorm.includes(qNormArabic) || ar.includes(q); // includes direct substring
+        const matchEnglish = enNorm.includes(qNormEn) || en.toLowerCase().includes(qLower);
+
+        if(matchArabic || matchEnglish){
+          results.push({ num: i+1, ar, en });
+        }
+      }
+      return results;
+    }
+
+    searchInput.addEventListener('input', ()=>{
+      const val = searchInput.value;
+      if(!val || !val.trim()){ suggestionsBox.style.display='none'; return; }
+      const list = buildSuggestions(val);
+      if(list.length === 0){
+        suggestionsBox.style.display='none';
+        return;
+      }
+      // map into suggestion items (show both languages)
+      const html = list.map(item => {
+        // Show English first when UI is English, else arabic first
+        if(state.language === 'en'){
+          return `<div class="suggestion-item" data-num="${item.num}">${item.num}. ${item.en} — ${item.ar}</div>`;
+        } else {
+          return `<div class="suggestion-item" data-num="${item.num}">${item.num}. ${item.ar} — ${item.en}</div>`;
+        }
+      }).join('');
+      suggestionsBox.innerHTML = html;
+      suggestionsBox.style.display = 'block';
+      suggestionsBox.setAttribute('aria-hidden','false');
+    });
+
+    suggestionsBox.addEventListener('click', (ev) => {
+      const el = ev.target.closest('.suggestion-item');
+      if(!el) return;
+      const num = Number(el.dataset.num);
+      suggestionsBox.style.display = 'none';
+      searchInput.value = '';
+      loadSurah(num);
+    });
+
+    // close suggestions when clicking outside
+    document.addEventListener('click', (e)=>{
+      const container = document.querySelector('.search-container');
+      if(!container.contains(e.target)){
+        suggestionsBox.style.display = 'none';
+      }
+    });
+
+    // -------------------------
+    // Settings modal events & controls
+    // -------------------------
+    settingsBtn.addEventListener('click', ()=>{ settingsModal.style.display = 'flex'; });
+    closeSettingsBtn.addEventListener('click', ()=>{ settingsModal.style.display = 'none'; });
+    window.addEventListener('click', (e)=>{ if(e.target === settingsModal) settingsModal.style.display = 'none'; });
+
+    translationSelect.addEventListener('change', ()=> {
+      state.language = translationSelect.value;
+      populateSurahSelect();
+      updateUILabels();
+      loadSurah(state.currentSurah); // reload verses in chosen language
+    });
+
+    speedSelect.addEventListener('change', ()=> {
+      const r = parseFloat(speedSelect.value) || 1.0;
+      audioEl.playbackRate = r;
+      showAudioStatus(state.language === 'ar' ? `سرعة التشغيل: ${r}x` : `Playback speed: ${r}x`, 1400);
+    });
+
+    volumeRange.addEventListener('input', ()=> {
+      const v = Number(volumeRange.value);
+      audioEl.volume = v / 100;
+      volumeValue.textContent = `${v}%`;
+    });
+
+    // audio event listeners
+    audioEl.addEventListener('ended', ()=> {
+      state.isPlaying = false;
+      playBtn.textContent = uiText[state.language].play;
+    });
+
+    audioEl.addEventListener('error', (e) => {
+      console.error('audio error: ', e);
+      showAudioStatus(uiText[state.language].audioError, 2500);
+    });
+
+    // -------------------------
+    // Keyboard shortcuts
+    // -------------------------
+    document.addEventListener('keydown', (e) => {
+      if(e.key === ' ' && document.activeElement !== searchInput){
+        e.preventDefault(); togglePlay();
+      }
+      if(e.key === 'ArrowLeft') prevSurah();
+      if(e.key === 'ArrowRight') nextSurah();
+    });
+
+    // -------------------------
+    // Init
+    // -------------------------
+    function init(){
+      populateSurahSelect();
+      updateUILabels();
+      // defaults
+      audioEl.volume = 0.5;
+      volumeRange.value = 50;
+      volumeValue.textContent = '50%';
+      audioEl.playbackRate = 1.0;
+
+      // wiring
+      playBtn.addEventListener('click', togglePlay);
+      prevBtn.addEventListener('click', prevSurah);
+      nextBtn.addEventListener('click', nextSurah);
+      surahSelect.addEventListener('change', ()=> loadSurah(Number(surahSelect.value)) );
+      reciterSelect.addEventListener('change', ()=> setupAudio(state.currentSurah) );
+
+      // load initial surah
+      loadSurah(state.currentSurah);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+  </script>
+
+  <!--
+    Short deployment notes:
+    - To make audio work reliably on all devices:
+      1) Put the Yasir audio files on your server under `/audio/001.mp3`, `/audio/002.mp3`, ... (pad to 3 digits).
+      2) If you can't host them, the player will try EveryAyah (everyayah.com). External hosts may have CORS or rate limits.
+      3) Best option: upload the reciter's mp3 files to your hosting or a proper CDN and keep the same filenames (001..114.mp3).
+      4) Host the site over HTTPS (most browsers block mixed content if your page is HTTPS and audio is HTTP).
+    - If you host locally, ensure the file names are the padded 3-digit numbers.
+  -->
+
 </body>
 </html>
